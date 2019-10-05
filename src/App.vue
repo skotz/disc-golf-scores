@@ -1,12 +1,14 @@
 <template>
   <div id="app">
+    <h1>Disc Golf Scores</h1>
     <ScoreList
       scoresData="scores.json"
-      playerName="All"
+      playerName="Scott"
       allowedPlayerNames="Scott,Martin,Tim"
       courseName="All"
       filterCourseHoles="18"
     />
+    <div class="copy">&copy; Scott Clayton &bull; <a href="https://github.com/skotz/disc-golf-scores">GitHub</a></div>
   </div>
 </template>
 
@@ -23,11 +25,13 @@ export default {
 
 <style>
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: "Roboto", sans-serif;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 50px;
+}
+#app .copy,
+#app .copy a {
+  margin-top: 50px;
+  color: #ccc;
 }
 </style>

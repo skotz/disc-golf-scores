@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="filters">
-      <div>
-        Filter Players
+    <b-spinner>
+    <div class="header">
+      <div class="player">
         <select v-model="playerName">
           <option
             v-for="name in this.allPlayerNames"
@@ -11,8 +11,7 @@
           >{{ name }}</option>
         </select>
       </div>
-      <div>
-        Filter Courses
+      <div class="course">
         <select v-model="courseName">
           <option
             v-for="name in this.allCourseNames"
@@ -21,11 +20,12 @@
           >{{ name }}</option>
         </select>
       </div>
-    </div>
-    <div class="header">
-      <div class="player">Player</div>
-      <div class="course">Course</div>
-      <div v-for="hole in this.numberOfHoles" v-bind:key="hole" class="hole">{{ hole }}</div>
+      <div
+        v-for="hole in this.numberOfHoles"
+        v-bind:key="hole"
+        class="hole"
+        v-on:click="sortByHole(hole)"
+      >{{ hole }}</div>
       <div class="par" v-on:click="sortByPar">+/-</div>
       <div class="date" v-on:click="sortByDate">Date</div>
     </div>
@@ -36,7 +36,7 @@
         v-for="hole in score.Holes"
         v-bind:key="hole.id"
         class="hole"
-        :class="[ 'par' + hole.OverUnder ]"
+        :class="[ hole.Score == 1 ? 'par-ace' : 'par' + hole.OverUnder ]"
       >{{ hole.Score }}</div>
       <div class="par">{{ score.OverUnderPar }}</div>
       <div class="date">{{ score.Date.toLocaleDateString("en-US") }}</div>
@@ -64,7 +64,11 @@ export default {
       sortPlayer: "",
       sortCourse: "",
       sortPar: "",
-      sortDate: "desc"
+      sortDate: "desc",
+      sortHole: {
+        number: 0,
+        direction: ""
+      }
     };
   },
   mounted: function() {
@@ -79,18 +83,35 @@ export default {
       this.sortCourse = "";
       this.sortPar = "";
       this.sortDate = "desc";
+      this.sortHole.direction = "";
+      this.sortHole.number = 0;
     },
     sortByPar: function() {
       this.sortPlayer = "";
       this.sortCourse = "";
       this.sortPar = this.sortPar == "asc" ? "desc" : "asc";
       this.sortDate = "";
+      this.sortHole.direction = "";
+      this.sortHole.number = 0;
     },
     sortByDate: function() {
       this.sortPlayer = "";
       this.sortCourse = "";
       this.sortPar = "";
       this.sortDate = this.sortDate == "asc" ? "desc" : "asc";
+      this.sortHole.direction = "";
+      this.sortHole.number = 0;
+    },
+    sortByHole: function(hole) {
+      this.sortPlayer = "";
+      this.sortCourse = "";
+      this.sortPar = "";
+      this.sortDate = "";
+      if (hole == this.sortHole.number) {
+        this.sortHole.direction =
+          this.sortHole.direction == "asc" ? "desc" : "asc";
+      }
+      this.sortHole.number = hole;
     }
   },
   computed: {
@@ -100,11 +121,14 @@ export default {
       }
       return parseInt(this.filterCourseHoles, 10);
     },
-    getSortPar: function () {
+    getSortPar: function() {
       return this.sortPar;
     },
-    getSortDate: function () {
+    getSortDate: function() {
       return this.sortDate;
+    },
+    getSortHole: function() {
+      return this.sortHole;
     },
     filteredScores: function() {
       let filtered = [];
@@ -157,7 +181,10 @@ export default {
         var allowFilteredPlayers =
           this.scores[i].PlayerName != "Par" &&
           (this.playerName == "All" ||
-            this.scores[i].PlayerName == this.playerName);
+            this.scores[i].PlayerName == this.playerName) &&
+          this.allowedPlayerNames
+            .split(",")
+            .indexOf(this.scores[i].PlayerName) >= 0;
         var allowFiltedHoles =
           this.numberOfHoles == 0 || this.numberOfHoles == holes.length;
         var allowFilteredCourses =
@@ -184,13 +211,27 @@ export default {
       if (this.getSortPar != "") {
         var direction = this.getSortPar;
         filtered = filtered.sort(function(a, b) {
-          return direction == "desc" ? b.OverUnderPar - a.OverUnderPar : a.OverUnderPar - b.OverUnderPar;
+          return direction == "desc"
+            ? b.OverUnderPar - a.OverUnderPar
+            : a.OverUnderPar - b.OverUnderPar;
         });
       }
       if (this.getSortDate != "") {
         var direction = this.getSortDate;
         filtered = filtered.sort(function(a, b) {
           return direction == "desc" ? b.Date - a.Date : a.Date - b.Date;
+        });
+      }
+      if (this.getSortHole != "" && this.getSortHole.number > 0) {
+        var hole = this.getSortHole;
+        filtered = filtered.sort(function(a, b) {
+          // Sort by over/under par first, and then by overall score
+          var ha = a.Holes[hole.number - 1];
+          var hb = b.Holes[hole.number - 1];
+          console.log(ha);
+          return hole.direction == "desc"
+            ? 1000 * (hb.OverUnder - ha.OverUnder) + (hb.Score - ha.Score)
+            : 1000 * (ha.OverUnder - hb.OverUnder) + (ha.Score - hb.Score);
         });
       }
       return filtered;
@@ -201,12 +242,21 @@ export default {
 
 <style scoped>
 select {
-  width: 200px;
+  width: 100%;
+  border: none;
+  padding: 0;
+  font-size: 16px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-weight: bold;
+  height: 25px;
+  line-height: 25px;
 }
 .header {
   font-weight: bold;
 }
-.header > div:hover {
+.header > div:hover,
+select:hover {
   background-color: #77ed8c;
 }
 .player,
@@ -217,6 +267,12 @@ select {
   display: inline-block;
   height: 25px;
   line-height: 25px;
+}
+.player,
+.par,
+.course,
+.date {
+  padding: 0 10px;
 }
 .player {
   width: 100px;
@@ -238,6 +294,18 @@ select {
   display: inline-block;
   width: 25px;
   text-align: center;
+}
+.par-ace {
+  background: radial-gradient(
+    circle,
+    rgba(229, 70, 252, 0.5998774509803921) 5%,
+    rgba(70, 92, 252, 0.6) 20%,
+    rgba(70, 252, 79, 0.6) 40%,
+    rgba(248, 252, 70, 0.6) 60%,
+    rgba(252, 164, 70, 0.6) 80%,
+    rgba(251, 63, 63, 0.6) 95%
+  );
+  font-weight: bold;
 }
 .par-3 {
   background-color: #2ca0b0;
