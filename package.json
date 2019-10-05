@@ -8,10 +8,12 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "convert": "csvtojson ./data/scores.csv > ./public/scores.json"
   },
   "dependencies": {
     "core-js": "^2.6.5",
+    "csvtojson": "^2.0.10",
     "vue": "^2.6.10"
   },
   "devDependencies": {
