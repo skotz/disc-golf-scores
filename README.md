@@ -1,4 +1,6 @@
-# disc-golf-scores
+# Disc Golf Scores
+
+Just playing around with Bootstrap and Vue. [View App](https://skotz.github.io/disc-golf-scores)
 
 ## Project setup
 ```
@@ -15,15 +17,12 @@ npm run serve
 npm run build
 ```
 
-### Run your tests
+### Converts a UDisc CSV export to json
 ```
-npm run test
-```
-
-### Lints and fixes files
-```
-npm run lint
+npm run convert
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Builds and deploys to gh-pages
+```
+npm run deploy
+```
