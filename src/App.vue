@@ -1,6 +1,11 @@
 <template>
   <div id="app">
-    <h1>Disc Golf Scores</h1>
+    <b-navbar type="dark" variant="success">
+      <b-navbar-brand>Disc Golf Scores</b-navbar-brand>
+      <b-navbar-nav class="ml-auto">
+        <b-nav-text right>Scott Clayton</b-nav-text>
+      </b-navbar-nav>
+    </b-navbar>
     <ScoreList
       scoresData="scores.json"
       playerName="Scott"
@@ -8,7 +13,6 @@
       courseName="All"
       filterCourseHoles="18"
     />
-    <div class="copy">&copy; Scott Clayton &bull; <a href="https://github.com/skotz/disc-golf-scores">GitHub</a></div>
   </div>
 </template>
 
@@ -27,11 +31,9 @@ export default {
 #app {
   font-family: "Roboto", sans-serif;
   text-align: center;
-  margin-top: 50px;
+  margin-bottom: 25px;
 }
-#app .copy,
-#app .copy a {
-  margin-top: 50px;
-  color: #ccc;
+nav {
+  margin-bottom: 25px;
 }
 </style>

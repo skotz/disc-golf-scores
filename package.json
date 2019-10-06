@@ -12,6 +12,8 @@
     "convert": "csvtojson ./data/scores.csv > ./public/scores.json"
   },
   "dependencies": {
+    "bootstrap": "^4.3.1",
+    "bootstrap-vue": "^2.0.3",
     "core-js": "^2.6.5",
     "csvtojson": "^2.0.10",
     "vue": "^2.6.10"

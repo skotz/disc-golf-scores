@@ -1,45 +1,51 @@
 <template>
   <div>
-    <b-spinner>
-    <div class="header">
-      <div class="player">
-        <select v-model="playerName">
-          <option
-            v-for="name in this.allPlayerNames"
-            v-bind:value="name"
-            v-bind:key="name"
-          >{{ name }}</option>
-        </select>
-      </div>
-      <div class="course">
-        <select v-model="courseName">
-          <option
-            v-for="name in this.allCourseNames"
-            v-bind:value="name"
-            v-bind:key="name"
-          >{{ name }}</option>
-        </select>
-      </div>
-      <div
-        v-for="hole in this.numberOfHoles"
-        v-bind:key="hole"
-        class="hole"
-        v-on:click="sortByHole(hole)"
-      >{{ hole }}</div>
-      <div class="par" v-on:click="sortByPar">+/-</div>
-      <div class="date" v-on:click="sortByDate">Date</div>
+    <div v-show="this.isLoading">
+      <b-spinner />
     </div>
-    <div v-for="score in this.filteredScores" v-bind:key="score.id">
-      <div class="player">{{ score.PlayerName }}</div>
-      <div class="course">{{ score.CourseName }}</div>
-      <div
-        v-for="hole in score.Holes"
-        v-bind:key="hole.id"
-        class="hole"
-        :class="[ hole.Score == 1 ? 'par-ace' : 'par' + hole.OverUnder ]"
-      >{{ hole.Score }}</div>
-      <div class="par">{{ score.OverUnderPar }}</div>
-      <div class="date">{{ score.Date.toLocaleDateString("en-US") }}</div>
+    <div v-show="!this.isLoading">
+      <div class="header">
+        <div class="player">
+          <select v-model="playerName">
+            <option
+              v-for="name in this.allPlayerNames"
+              v-bind:value="name"
+              v-bind:key="name"
+            >{{ name }}</option>
+          </select>
+        </div>
+        <div class="course">
+          <select v-model="courseName">
+            <option
+              v-for="name in this.allCourseNames"
+              v-bind:value="name"
+              v-bind:key="name"
+            >{{ name }}</option>
+          </select>
+        </div>
+        <div
+          v-for="hole in this.numberOfHoles"
+          v-bind:key="hole"
+          class="hole"
+          v-on:click="sortByHole(hole)"
+        >{{ hole }}</div>
+        <div class="par" v-on:click="sortByPar">+/-</div>
+        <div class="date" v-on:click="sortByDate">Date</div>
+      </div>
+      <div v-for="score in this.filteredScores" v-bind:key="score.id">
+        <div class="player">{{ score.PlayerName }}</div>
+        <div class="course">{{ score.CourseName }}</div>
+        <div
+          v-for="hole in score.Holes"
+          v-bind:key="hole.id"
+          v-b-tooltip.hover
+          :title="hole.OverUnderName + ' ' + (hole.OverUnder > 0 ? '+' : '') + hole.OverUnder"
+          class="hole"
+          :class="[ hole.Score == 1 ? 'par-ace' : 'par' + hole.OverUnder ]"
+        >{{ hole.Score }}</div>
+        <div class="par">{{ score.OverUnderPar }}</div>
+        <div class="date">{{ score.Date.toLocaleDateString("en-US") }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -57,6 +63,7 @@ export default {
   data() {
     return {
       publicPath: process.env.BASE_URL,
+      loading: true,
       scores: [],
       allPlayerNames: ["All"],
       allCourseNames: ["All"],
@@ -115,6 +122,9 @@ export default {
     }
   },
   computed: {
+    isLoading: function() {
+      return this.loading;
+    },
     numberOfHoles: function() {
       if (typeof this.filterCourseHoles === "undefined") {
         return 0;
@@ -155,11 +165,33 @@ export default {
             })["Hole" + h],
             10
           );
+          var overunderName = "par";
+          var overUnder = score - par;
+          if (score == 1) {
+            overunderName = "hole-in-one";
+          } else if (overUnder == -3) {
+            overunderName = "albatross";
+          } else if (overUnder == -2) {
+            overunderName = "eagle";
+          } else if (overUnder == -1) {
+            overunderName = "birdie";
+          } else if (overUnder == 1) {
+            overunderName = "bogey";
+          } else if (overUnder == 2) {
+            overunderName = "double bogey";
+          } else if (overUnder == 3) {
+            overunderName = "triple bogey";
+          } else if (overUnder == 4) {
+            overunderName = "double bogey";
+          } else if (overUnder >= 5) {
+            overunderName = "bogey " + overUnder;
+          }
           holes.push({
             Number: h,
             Score: score,
             Par: par,
-            OverUnder: score - par
+            OverUnder: overUnder,
+            OverUnderName: overunderName
           });
         }
         // Save a list of all the player names
@@ -228,12 +260,12 @@ export default {
           // Sort by over/under par first, and then by overall score
           var ha = a.Holes[hole.number - 1];
           var hb = b.Holes[hole.number - 1];
-          console.log(ha);
           return hole.direction == "desc"
             ? 1000 * (hb.OverUnder - ha.OverUnder) + (hb.Score - ha.Score)
             : 1000 * (ha.OverUnder - hb.OverUnder) + (ha.Score - hb.Score);
         });
       }
+      this.loading = !filtered.length;
       return filtered;
     }
   }
@@ -279,7 +311,7 @@ select:hover {
   text-align: left;
 }
 .course {
-  width: 200px;
+  width: 225px;
   text-align: left;
 }
 .par {
