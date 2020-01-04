@@ -154,10 +154,14 @@ export default {
         );
         holes--;
         if (
-          allCourses.indexOf(this.scores[i].CourseName + " - " + this.scores[i].LayoutName) < 0 &&
+          allCourses.indexOf(
+            this.scores[i].CourseName + " - " + this.scores[i].LayoutName
+          ) < 0 &&
           holes == this.numberOfHoles
         ) {
-          allCourses.push(this.scores[i].CourseName + " - " + this.scores[i].LayoutName);
+          allCourses.push(
+            this.scores[i].CourseName + " - " + this.scores[i].LayoutName
+          );
         }
       }
       allCourses.sort();
@@ -229,6 +233,16 @@ export default {
             OverUnderName: overunderName
           });
         }
+        // Remove duplicates (other players can record your score for you on your account)
+        var nonDuplicate = filtered.every(x => {
+          // Within half an hour of each other?
+          var sameTime =
+            Math.abs(new Date(x.Date) - new Date(this.scores[i].Date)) <
+            60 * 30 * 1000;
+          var sameScore = x.TotalScore == this.scores[i].Total;
+          var sameCourse = x.CourseName == this.scores[i].CourseName;
+          return !sameTime || !sameScore || !sameCourse;
+        });
         var allowFilteredPlayers =
           this.scores[i].PlayerName != "Par" &&
           (this.playerName == "All" ||
@@ -240,12 +254,14 @@ export default {
           this.numberOfHoles == 0 || this.numberOfHoles == holes.length;
         var allowFilteredCourses =
           this.filterCourseName == "All" ||
-          this.filterCourseName == this.scores[i].CourseName + " - " + this.scores[i].LayoutName;
+          this.filterCourseName ==
+            this.scores[i].CourseName + " - " + this.scores[i].LayoutName;
         if (
           allowFilteredPlayers &&
           holes.length &&
           allowFiltedHoles &&
-          allowFilteredCourses
+          allowFilteredCourses &&
+          nonDuplicate
         ) {
           filtered.push({
             PlayerName: this.scores[i].PlayerName,
