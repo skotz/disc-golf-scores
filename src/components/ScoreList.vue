@@ -15,7 +15,7 @@
           </select>
         </div>
         <div class="course">
-          <select v-model="courseName">
+          <select v-model="filterCourseName">
             <option
               v-for="name in this.allCourseNames"
               v-bind:value="name"
@@ -51,7 +51,6 @@
 </template>
 
 <script>
-const csv = require("csvtojson");
 export default {
   props: {
     scoresData: String,
@@ -64,10 +63,8 @@ export default {
     return {
       publicPath: process.env.BASE_URL,
       loading: true,
+      filterCourseName: "",
       scores: [],
-      allPlayerNames: ["All"],
-      allCourseNames: ["All"],
-      allHoleCounts: [],
       sortPlayer: "",
       sortCourse: "",
       sortPar: "",
@@ -79,9 +76,13 @@ export default {
     };
   },
   mounted: function() {
+    this.filterCourseName = this.courseName;
     fetch(this.publicPath + this.scoresData)
       .then(response => response.json())
-      .then(data => (this.scores = data))
+      .then(data => {
+        this.scores = data;
+        this.loading = false;
+      })
       .catch(error => console.error(error));
   },
   methods: {
@@ -140,6 +141,42 @@ export default {
     getSortHole: function() {
       return this.sortHole;
     },
+    allCourseNames: function() {
+      var allCourses = ["All"];
+      for (let i = 0; i < this.scores.length; i++) {
+        let holes = 0;
+        for (
+          holes = 1;
+          holes <= 100 &&
+          typeof this.scores[i]["Hole" + holes] !== "undefined" &&
+          this.scores[i]["Hole" + holes] != 0;
+          holes++
+        );
+        holes--;
+        if (
+          allCourses.indexOf(this.scores[i].CourseName + " - " + this.scores[i].LayoutName) < 0 &&
+          holes == this.numberOfHoles
+        ) {
+          allCourses.push(this.scores[i].CourseName + " - " + this.scores[i].LayoutName);
+        }
+      }
+      allCourses.sort();
+      return allCourses;
+    },
+    allPlayerNames: function() {
+      var allPlayers = ["All"];
+      for (let i = 0; i < this.scores.length; i++) {
+        if (
+          allPlayers.indexOf(this.scores[i].PlayerName) < 0 &&
+          this.allowedPlayerNames
+            .split(",")
+            .indexOf(this.scores[i].PlayerName) >= 0
+        ) {
+          allPlayers.push(this.scores[i].PlayerName);
+        }
+      }
+      return allPlayers;
+    },
     filteredScores: function() {
       let filtered = [];
       for (let i = 0; i < this.scores.length; i++) {
@@ -181,9 +218,7 @@ export default {
             overunderName = "double bogey";
           } else if (overUnder == 3) {
             overunderName = "triple bogey";
-          } else if (overUnder == 4) {
-            overunderName = "double bogey";
-          } else if (overUnder >= 5) {
+          } else if (overUnder >= 4) {
             overunderName = "bogey " + overUnder;
           }
           holes.push({
@@ -193,22 +228,6 @@ export default {
             OverUnder: overUnder,
             OverUnderName: overunderName
           });
-        }
-        // Save a list of all the player names
-        if (
-          this.allPlayerNames.indexOf(this.scores[i].PlayerName) < 0 &&
-          this.allowedPlayerNames
-            .split(",")
-            .indexOf(this.scores[i].PlayerName) >= 0
-        ) {
-          this.allPlayerNames.push(this.scores[i].PlayerName);
-        }
-        // Save a list of all the course names
-        if (
-          this.allCourseNames.indexOf(this.scores[i].CourseName) < 0 &&
-          holes.length == this.numberOfHoles
-        ) {
-          this.allCourseNames.push(this.scores[i].CourseName);
         }
         var allowFilteredPlayers =
           this.scores[i].PlayerName != "Par" &&
@@ -220,8 +239,8 @@ export default {
         var allowFiltedHoles =
           this.numberOfHoles == 0 || this.numberOfHoles == holes.length;
         var allowFilteredCourses =
-          this.courseName == "All" ||
-          this.courseName == this.scores[i].CourseName;
+          this.filterCourseName == "All" ||
+          this.filterCourseName == this.scores[i].CourseName + " - " + this.scores[i].LayoutName;
         if (
           allowFilteredPlayers &&
           holes.length &&
@@ -241,7 +260,7 @@ export default {
       }
       // Sort results
       if (this.getSortPar != "") {
-        var direction = this.getSortPar;
+        let direction = this.getSortPar;
         filtered = filtered.sort(function(a, b) {
           return direction == "desc"
             ? b.OverUnderPar - a.OverUnderPar
@@ -249,7 +268,7 @@ export default {
         });
       }
       if (this.getSortDate != "") {
-        var direction = this.getSortDate;
+        let direction = this.getSortDate;
         filtered = filtered.sort(function(a, b) {
           return direction == "desc" ? b.Date - a.Date : a.Date - b.Date;
         });
@@ -265,7 +284,6 @@ export default {
             : 1000 * (ha.OverUnder - hb.OverUnder) + (ha.Score - hb.Score);
         });
       }
-      this.loading = !filtered.length;
       return filtered;
     }
   }
@@ -311,7 +329,7 @@ select:hover {
   text-align: left;
 }
 .course {
-  width: 225px;
+  width: 300px;
   text-align: left;
 }
 .par {

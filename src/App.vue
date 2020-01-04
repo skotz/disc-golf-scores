@@ -9,7 +9,7 @@
     <ScoreList
       scoresData="scores.json"
       playerName="Scott"
-      allowedPlayerNames="Scott,Martin,Tim"
+      allowedPlayerNames="Scott"
       courseName="All"
       filterCourseHoles="18"
     />
